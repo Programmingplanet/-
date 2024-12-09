@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="fa">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>کیفیت هوای اصفهان</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f4;
+            color: #333;
+        }
+
+        header {
+            background-color: #007BFF;
+            color: white;
+            padding: 1rem 0;
+            text-align: center;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 2rem auto;
+            padding: 1rem;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .chart-container {
+            display: flex;
+            justify-content: space-around;
+            margin-top: 2rem;
+        }
+
+        .chart-item {
+            width: 30%;
+            text-align: center;
+        }
+
+        canvas {
+            width: 100%;
+            height: auto;
+        }
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gauge.js/1.3.7/gauge.min.js"></script>
+</head>
+<body>
+    <header>
+        <h1>کیفیت هوای اصفهان</h1>
+    </header>
+    <div class="container">
+        <div class="chart-container">
+            <div class="chart-item">
+                <h3>اکنون</h3>
+                <canvas id="gaugeNow"></canvas>
+                <p id="aqiNowLabel">در حال بارگیری...</p>
+            </div>
+            <div class="chart-item">
+                <h3>دیروز</h3>
+                <canvas id="gaugeYesterday"></canvas>
+                <p id="aqiYesterdayLabel">در حال بارگیری...</p>
+            </div>
+            <div class="chart-item">
+                <h3>امروز</h3>
+                <canvas id="gaugeToday"></canvas>
+                <p id="aqiTodayLabel">در حال بارگیری...</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const apiUrlNow = "https://api.waqi.info/feed/esfahan/?token=0c1928072445f35f1d5e183e7cddaaafcb4a0e48";
+        const apiUrlYesterday = "https://api.waqi.info/feed/esfahan/?token=0c1928072445f35f1d5e183e7cddaaafcb4a0e48&yesterday";
+        const apiUrlToday = "https://api.waqi.info/feed/esfahan/?token=0c1928072445f35f1d5e183e7cddaaafcb4a0e48&today";
+
+        function createGauge(elementId, value) {
+            const opts = {
+                angle: 0, 
+                lineWidth: 0.28,
+                radiusScale: 1,
+                pointer: {
+                    length: 0.6,
+                    strokeWidth: 0.035,
+                    color: '#000000'
+                },
+                limitMax: false,
+                limitMin: false,
+                colorStart: '#6FADCF',
+                colorStop: '#8FC0DA',
+                strokeColor: '#E0E0E0',
+                generateGradient: true,
+                highDpiSupport: true,
+                staticZones: [
+                    {strokeStyle: "#30B32D", min: 0, max: 50},
+                    {strokeStyle: "#FFDD00", min: 51, max: 100},
+                    {strokeStyle: "#FF8800", min: 101, max: 150},
+                    {strokeStyle: "#FF4444", min: 151, max: 200},
+                    {strokeStyle: "#8B0000", min: 201, max: 300},
+                    {strokeStyle: "#660000", min: 301, max: 500}
+                ]
+            };
+            const target = document.getElementById(elementId);
+            const gauge = new Gauge(target).setOptions(opts);
+            gauge.maxValue = 500;
+            gauge.setMinValue(0);
+            gauge.animationSpeed = 32;
+            gauge.set(value);
+        }
+
+        function fetchData(url, gaugeId, labelId) {
+            fetch(url)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === "ok") {
+                        const aqi = data.data.aqi;
+                        createGauge(gaugeId, aqi);
+                        document.getElementById(labelId).innerText = `AQI: ${aqi}`;
+                    } else {
+                        document.getElementById(labelId).innerText = "خطا در دریافت داده‌ها.";
+                    }
+                })
+                .catch(error => {
+                    console.error("Error: ", error);
+                    document.getElementById(labelId).innerText = "خطا در دریافت داده‌ها.";
+                });
+        }
+
+        fetchData(apiUrlNow, "gaugeNow", "aqiNowLabel");
+        fetchData(apiUrlYesterday, "gaugeYesterday", "aqiYesterdayLabel");
+        fetchData(apiUrlToday, "gaugeToday", "aqiTodayLabel");
+    </script>
+</body>
+</html>
